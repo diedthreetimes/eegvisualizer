@@ -1,0 +1,8 @@
+In order to run you need to wrap the connection from the DSI machine in a websocket.
+
+For this websockify (https://github.com/novnc/websockify) is used. 
+
+Specifically the steps are
+1.
+2.
+...
