@@ -2,7 +2,18 @@ In order to run you need to wrap the connection from the DSI machine in a websoc
 
 For this websockify (https://github.com/novnc/websockify) is used. 
 
-Specifically the steps are
-1.
-2.
-...
+Specifically the steps are:
+
+For Dev work
+$ ../mock_eeg_server/server.rb
+$ websocket/websockify.rb localhost:8080 localhost:8844
+
+For Real use
+* Launch the tcp/ip protocol of DSIStreamer on port 8844
+$ websocket/websockify.rb localhost:8080 <path_to_dsistreamer_machine>:8844
+
+We then need to serve the js assets this can be done in a variety of ways but is simple using npm's http-server
+$ npm install http-server -g
+$ cd js; http-server -p 8081
+
+Then browse to http://127.0.0.1:8081/

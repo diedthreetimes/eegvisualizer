@@ -1,0 +1,19 @@
+{
+  "nodes": [
+    {"id": "Channel 1", "group": 1, "color":"#732"},
+    {"id": "Channel 2", "group": 1, "color":"#821"},
+    {"id": "Channel 3", "group": 1, "color":"#373"},
+    {"id": "Channel 4", "group": 1, "color":"#aaa"},
+    {"id": "Channel 5", "group": 1, "color":"#aaa"},
+    {"id": "Channel 6", "group": 1, "color":"#aaa"},
+    {"id": "Channel 7", "group": 1, "color":"#732"}
+  ],
+  "links": [
+    {"source": "Channel 1", "target": "Channel 4", "value": 100},
+    {"source": "Channel 2", "target": "Channel 4", "value": 100},
+    {"source": "Channel 3", "target": "Channel 4", "value": 100},
+    {"source": "Channel 5", "target": "Channel 6", "value": 200},
+    {"source": "Channel 7", "target": "Channel 6", "value": 200},
+    {"source": "Channel 6", "target": "Channel 4", "value": 200}
+  ]
+}

@@ -10,7 +10,8 @@ DSI_STREAM_VERSION = "DSI-Streamer-v.0.7.34"
 # Frequency as user's mains frequency (50 or 60Hz) and sensor sampling frequency (300,600, or 900 Hz)
 FREQUENCY = "60,300"
 
-# TODO: All packets are dumped without delay. once the proper delay tech is built we should enable this option
+# How long to sleep between each data packet set to 0 to turn off completely
+SLEEP_DURATION=0.0033#300hz # TODO: We could build this in directly from the data to be more precise
 
 # Add a header to any packet
 def gen_packet type, payload
@@ -34,21 +35,21 @@ def gen_dummy_packet
 end
 
 def greet client
-  client.puts(gen_event_packet(1,NOT_APPLICABLE,DSI_STREAM_VERSION))
+  client.write(gen_event_packet(1,NOT_APPLICABLE,DSI_STREAM_VERSION))
 end
 
 def send_intro client
   # montage # TODO: Implement the sensor map
-  client.puts(gen_dummy_packet)
+  client.write(gen_dummy_packet)
   # data rate
-  client.puts(gen_event_packet(10,HEADSET,FREQUENCY))
+  client.write(gen_event_packet(10,HEADSET,FREQUENCY))
   # Data start
-  client.puts(gen_event_packet(2,HEADSET))
+  client.write(gen_event_packet(2,HEADSET))
 end
 
 def send_stop client
   # Data stop
-  client.puts(gen_event_packet(3,HEADSET))
+  client.write(gen_event_packet(3,HEADSET))
 end
 
 def parse_data_as_bytes
@@ -77,7 +78,12 @@ def parse_data_as_bytes
 end
 
 def stream_data client
-  parse_data_as_bytes { |bytes_to_send| client.puts(gen_packet(1, bytes_to_send)) }
+  parse_data_as_bytes { |bytes_to_send|
+    client.write(gen_packet(1, bytes_to_send))
+    if SLEEP_DURATION > 0
+      sleep(SLEEP_DURATION)
+    end
+  }
 end
 
 # Turn on for easy debugging
