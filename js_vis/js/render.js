@@ -4,11 +4,9 @@ var canvas = document.querySelector("canvas"),
     height = canvas.height,
     SCALE = 2.5,
     node_scale = 2,
-    nodes = []//,
-// These vars where used for processing the binary stream which we've abandoned for now
-    // carry_over_buf,
-    // num_processed_bufs = 0, 
-    // num_recorded_bufs = 0
+    nodes = [],
+    MAX_VAL = 1200.0,
+    MIN_VAL = -500.0
     ;
 
 // num_processed_bufs and num_recorded_bufs keep track of an event that may never happen
@@ -37,9 +35,6 @@ var socket = new WebSocket('ws://localhost:8080');
 
 // TODO: we currently send json as binary data requiring an extra conversion step. This is silly, but required while using  a "binary" connection. Investigate switching to text based websockets instead
 socket.onmessage = function(evt){
-  //alert("I got data: " + evt.data);
-  //console.log(evt.data.size);
-  //console.log(evt.data);
   var reader = new FileReader();
   reader.addEventListener('loadend', (e) => {
     var floats = JSON.parse(e.srcElement.result);
@@ -95,9 +90,32 @@ function redrawColors(colors){
 }
 
 function colorize(value){
-  console.log(value);
-
-  return "white";
+  // Probably want something like https://github.com/Enideo/jquery-colors
+  // For now we do simple things with hues
+  // Optimally lets work between two hues
+  //
+  // function percentageToHsl(percentage, hue0, hue1) {
+  //  var hue = (percentage * (hue1 - hue0)) + hue0;
+  //  return 'hsl(' + hue + ', 100%, 50%)';
+  //}
+  
+  // Map value to a 0...1 scale
+  var i = (value - MIN_VAL) / (MAX_VAL - MIN_VAL)
+  
+  if (i < 0) {
+    console.log(value);
+    i = 0.0;
+  } else if (i > 1) {
+    console.log(value);
+    i = 1.0;
+  }
+  
+  // convert decimal to hue
+  var hue = i * 1.2 / 360;
+  var rgb = hslToRgb(hue, 1, .5);
+  
+  // format to hex string and return
+  return 'rgb('+rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
 }
 
 function redraw() {
@@ -116,4 +134,42 @@ function drawNode(d) {
 
   context.fillStyle = d.color;
   context.fill();
+}
+
+// Cdoe function from:
+//     https://stackoverflow.com/questions/2353211/hsl-to-rgb-color-conversion
+/**
+ * Converts an HSL color value to RGB. Conversion formula
+ * adapted from http://en.wikipedia.org/wiki/HSL_color_space.
+ * Assumes h, s, and l are contained in the set [0, 1] and
+ * returns r, g, and b in the set [0, 255].
+ *
+ * @param   {number}  h       The hue
+ * @param   {number}  s       The saturation
+ * @param   {number}  l       The lightness
+ * @return  {Array}           The RGB representation
+ */
+function hslToRgb(h, s, l){
+    var r, g, b;
+
+    if(s == 0){
+        r = g = b = l; // achromatic
+    }else{
+        var hue2rgb = function hue2rgb(p, q, t){
+            if(t < 0) t += 1;
+            if(t > 1) t -= 1;
+            if(t < 1/6) return p + (q - p) * 6 * t;
+            if(t < 1/2) return q;
+            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+        }
+
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+    }
+
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }

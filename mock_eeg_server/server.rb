@@ -13,12 +13,14 @@ FREQUENCY = "60,300"
 # How long to sleep between each data packet set to 0 to turn off completely
 SLEEP_DURATION=0.0033#300hz # TODO: We could build this in directly from the data to be more precise
 
+ENCODING='ASCII-8BIT'
+
 # Add a header to any packet
 def gen_packet type, payload
   length = payload.size
   number = Thread.current[:number]
   Thread.current[:number] = number + 1
-  "@ABCD" + [type,length,number].pack('CS>I>').force_encoding('UTF-8') + payload
+  "@ABCD" + [type,length,number].pack('CS>I>').force_encoding(ENCODING) + payload
 end
 
 #sending_node = headset? 1 : 0
@@ -26,7 +28,7 @@ HEADSET=1
 NOT_APPLICABLE=0
 def gen_event_packet event_code, sending_node, message=nil
   message_length = message.nil? ? 0 : message.size # TODO: Verify messages are not null terminated
-  payload = [event_code,sending_node,message_length,message].pack('I>I>I>').force_encoding('UTF-8')
+  payload = [event_code,sending_node,message_length,message].pack('I>I>I>').force_encoding(ENCODING)
   gen_packet(5, payload)
 end
 
@@ -69,7 +71,7 @@ def parse_data_as_bytes
     nchannels.times { |i| channel_data[i] =  reading[i+1].to_f }
 
     trigger_value = reading[nchannels+1].to_f # -1 + 1 + 1
-    bytes_to_send = [timestamp,0,*adc_status,*channel_data,trigger_value].pack('gC CCCCCC '+channel_data.size.times.collect{"g"}.join+"g").force_encoding('UTF-8')
+    bytes_to_send = [timestamp,0,*adc_status,*channel_data,trigger_value].pack('gC CCCCCC '+channel_data.size.times.collect{"g"}.join+"g").force_encoding(ENCODING)
 
     # Time offset, adc_status, and adc_sequence number currently ignored
 

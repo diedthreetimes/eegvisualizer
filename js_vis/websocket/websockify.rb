@@ -66,9 +66,9 @@ Traffic Legend:
     while !buf.nil? do
       if @carry_over
         buf = @carry_over + buf
-        @we_had_one = @carry_over # TODO: Delete this
         @carry_over = nil
       end
+
 
       if buf.size < 12
         @carry_over = buf
@@ -78,15 +78,8 @@ Traffic Legend:
 
       # We have a problem with our packets somewhere
       if buf[0...5] != "@ABCD"
-        if buf[0] == "\x00" && buf[1..5] == "@ABCD" || buf[2..6] = "@ABCD"  # this branch scares me but something is introducing null bytes
-          # Its firing REALLY frequently but this seems to fix it
-          buf = buf[1...buf.size]
-#          puts "found a weird packet"
-          next
-        else
-          binding.pry
-          raise "This should never happen"
-        end
+        binding.pry
+        raise "This should never happen"
       end
 
       # Read the type
@@ -94,6 +87,7 @@ Traffic Legend:
 
       # Calculate the carry_over based on the length
       expected_length = HEADER_LENGTH + length
+      packet = nil
       if buf.size < expected_length
         @carry_over = buf
         buf = nil
@@ -102,14 +96,14 @@ Traffic Legend:
 #        binding.pry
         packet = buf[0...expected_length]
         buf = buf[expected_length...buf.size]# next buf
-        if buf.size == 1 # This branch is concerning but not sure where the extra byte is coming from
-#          binding.pry
-          if buf == "\x00"
-            buf = nil
-#            binding.pry
-            puts "found an empty buf"
-          end
-        end
+#        if buf.size == 1 # This branch is concerning but not sure where the extra byte is coming from
+
+#           if buf == "\x00"
+#             buf = nil
+# #            binding.pry
+#             puts "found an empty buf"
+#           end
+#        end
       else # buf.size == expected_length
         packet = buf
         buf = nil
@@ -117,9 +111,7 @@ Traffic Legend:
 
       # TODO: Parametrize this
       # Discard any packet except sensor data TYPE 1
-      if type != 1
-        nil
-      elsif !buf.nil?
+      if type == 1 && !packet.nil?
         ret << packet
       end
     end
@@ -190,11 +182,6 @@ Traffic Legend:
         buf = target.recv(@@Buffer_size)
         if buf.length == 0
           raise EClose, "Target closed"
-        end
-
-#        binding.pry
-        if buf.size == 1
-          binding.pry
         end
 
         msg = align_buf(buf)
