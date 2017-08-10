@@ -6,7 +6,9 @@ var canvas = document.querySelector("canvas"),
     node_scale = 2,
     nodes = [],
     MAX_VAL = 1200.0,
-    MIN_VAL = -500.0
+    MIN_VAL = -500.0,
+    SMOOTH = false
+    CLIP_SCALE = 0.75;
     ;
 
 var simulation = d3.forceSimulation()
@@ -33,6 +35,9 @@ socket.onmessage = function(evt){
   var reader = new FileReader();
   reader.addEventListener('loadend', (e) => {
     var floats = JSON.parse(e.srcElement.result);
+    if (SMOOTH) {
+      trackaverage(floats);
+    }
     var colors = floats.map(function(f) {
       return colorize(f);
     });
@@ -84,15 +89,47 @@ function redrawColors(colors){
   redraw();
 }
 
+//Take the average over all channels and divide each channel by that average
+//Optimally take a running average (100-300ms or 10-30 packets)
+// Clip at %75 of the maximum over the window and %75 of the minimum
+var buffer = [];
+var max = 0;
+var min = 0;
+var buffer_limit = 30;
+var avg = 0;
+function trackaverage(values){
+  if (buffer.length == buffer_limit) {
+    buffer.shift();
+  }
+
+  buffer.push(values)
+  
+  max = MIN_VAL;
+  min = MAX_VAL;
+  avg = buffer.reduce(function(sum,arys) {
+    return arys.reduce(function(isum,value) {
+      if (value > max) {
+	max = value;
+      }
+      if (value < min) {
+	min = value;
+      }
+      return isum + value;
+    }, 0) / arys.length;
+  }, 0) / buffer.length;
+}
+
 function colorize(value){
   // Map value to a 0...1 scale
-  var i = (value - MIN_VAL) / (MAX_VAL - MIN_VAL)
+  if (SMOOTH) { 
+    var i = (value/avg - min*CLIP_SCALE/avg) / ((max/avg - min/avg)*CLIP_SCALE);
+  } else {
+    var i = (value - MIN_VAL) / (MAX_VAL - MIN_VAL);
+  }
   
   if (i < 0) {
-    console.log(value);
     i = 0.0;
   } else if (i > 1) {
-    console.log(value);
     i = 1.0;
   }
   
