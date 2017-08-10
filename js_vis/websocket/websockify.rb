@@ -91,19 +91,9 @@ Traffic Legend:
       if buf.size < expected_length
         @carry_over = buf
         buf = nil
-#        binding.pry
       elsif buf.size > expected_length
-#        binding.pry
         packet = buf[0...expected_length]
         buf = buf[expected_length...buf.size]# next buf
-#        if buf.size == 1 # This branch is concerning but not sure where the extra byte is coming from
-
-#           if buf == "\x00"
-#             buf = nil
-# #            binding.pry
-#             puts "found an empty buf"
-#           end
-#        end
       else # buf.size == expected_length
         packet = buf
         buf = nil
