@@ -1,24 +1,12 @@
 var canvas = document.querySelector("canvas"),
-    context = canvas.getContext("2d"),
-    width = canvas.width,
-    height = canvas.height,
-    SCALE = 2.5,
-    node_scale = 2,
-    nodes = [],
     MAX_VAL = 1200.0,
     MIN_VAL = -500.0,
-    SMOOTH = true
-    CLIP_SCALE = 0.75;
+    SMOOTH = true,
+    REDUCE_FRAMERATE = true,
+    SKIPPED_FRAMES = 100,
+    CLIP_SCALE = 0.75,
+    HUE_WIDTH = 30;
     ;
-
-var simulation = d3.forceSimulation()
-    .force("link", d3.forceLink().id(function(d) { return d.id; }).strength(0.5))
-    .force("charge", d3.forceManyBody())
-    .force("center", d3.forceCenter(width / (SCALE*2), height / (SCALE*2)))
-    // .alphaDecay(0);
-
-// d3.select("input[type=range]")
-//    .on("input", inputted);
 
 // Change this if the proxy is not on the local machine
 var socket = new WebSocket('ws://localhost:8080');
@@ -31,6 +19,7 @@ var socket = new WebSocket('ws://localhost:8080');
 // For more see http://blog.mgechev.com/2015/02/06/parsing-binary-protocol-data-javascript-typedarrays-blobs/
 
 // TODO: we currently send json as binary data requiring an extra conversion step. This is silly, but required while using  a "binary" connection. Investigate switching to text based websockets instead
+var count = 0;
 socket.onmessage = function(evt){
   var reader = new FileReader();
   reader.addEventListener('loadend', (e) => {
@@ -38,55 +27,32 @@ socket.onmessage = function(evt){
     if (SMOOTH) {
       trackaverage(floats);
     }
-    var colors = floats.map(function(f) {
-      return colorize(f);
-    });
-  
-    redrawColors(colors);
+
+    if (REDUCE_FRAMERATE) {
+      if (count % SKIPPED_FRAMES == 0) {
+	redrawColors(floats);
+      }
+    }
+    
+    count = count + 1;
   });
 
   reader.readAsText(evt.data);
 }
 
-
-d3.json("graph.json", function(error, graph) {
-  if (error) throw error;
-
-  nodes = graph.nodes
-  simulation
-      .nodes(nodes)
-      .on("tick", ticked);
-
-
-  simulation.force("link")
-      .links(graph.links);
-
-  function ticked() {
-    context.clearRect(0, 0, width, height);
-
-    context.beginPath();
-    graph.links.forEach(drawLink);
-    context.strokeStyle = "#aaa";
-    context.stroke();
-
-//    context.beginPath();
-      // TODO: Incorporate a customized node color here
-    graph.nodes.forEach(drawNode);
-// TOOD: Is there a faster way to render this
-/*    context.fill(); */
-//    context.strokeStyle = "#fff";
-//    context.stroke();
-  }
-});
+function redrawColors(values){
+  // TODO: Possibly make these selectors globals to avoid unecessary work
+  var stop1 = d3.select(".stop1");
+  var stop2 = d3.select(".stop2");
+  // For each layer set and colorize
+  // Set the baground gradient
+  stop1.transition().attr('stop-color', colorize(values[0],0));
+  stop2.transition().attr('stop-color', colorize(values[1],1));
 
 
-
-function redrawColors(colors){
-  for (i = 0; i < colors.length; i++) {
-    nodes[i].color = colors[i];
-  }
-
-  redraw();
+  // for (i = 0; i < values.length; i++) {    
+  //   nodes[i].color = colorize(values[i],i);
+  // }
 }
 
 //Take the average over all channels and divide each channel by that average
@@ -125,7 +91,24 @@ function trackaverage(values){
   }, 0) / buffer.length;
 }
 
-function colorize(value){
+var hues = [
+235, // Channel 1 - BOTTOM
+306, // Channel 2 - TOP
+120, // Channel 3 - Green
+292, // Channel 4 - Magenta
+38, // Channel 5 - Orange
+180, // Channel 6 - Cyan
+59  // Channel 7 - Yellow // TODO: Some of these may need to be remapped
+]
+var layer_ids = [ // TODO: Determine the layer ids and the re-style logic
+//  GREEN // Channel 3
+// MAGENTA // Channel 4
+// Orange // Channel 5
+"Light_Blue_lines",// Cyan // Channel 6
+// Yellow // Channel 7
+]
+var background_saturation = '85%';
+function colorize(value, index){
   // Map value to a 0...1 scale
   if (SMOOTH) { 
     var i = (value/avg - min*CLIP_SCALE/avg) / ((max/avg - min/avg)*CLIP_SCALE);
@@ -139,25 +122,17 @@ function colorize(value){
     i = 1.0;
   }
   
-  var hue = (i * (120 - 0)) + 0;
+  var hue = (i * (HUE_WIDTH)) + hues[index]-HUE_WIDTH;
   //var hue = (i * (hue1 - hue0)) + hue0;
-  return 'hsl(' + hue + ', 100%, 50%)';
-}
+  ret = ""
+  if (index == 0) { // Bottom
+    ret =  'hsl(' + hue + ', ' + '85%,65%)';
+  } if (index == 1) { // TOP 
+    ret =  'hsl(' + hue + ', ' + '100%,41%)';
+  }
 
-function redraw() {
-    simulation.on("tick")()
-}
-
-function drawLink(d) {
-  context.moveTo(d.source.x*SCALE, d.source.y*SCALE);
-  context.lineTo(d.target.x*SCALE, d.target.y*SCALE);
-}
-
-function drawNode(d) {
-  context.beginPath();
-  context.moveTo(d.x*SCALE + 3*SCALE*node_scale, d.y*SCALE);
-  context.arc(d.x*SCALE, d.y*SCALE, 3*SCALE*node_scale, 0, 2 * Math.PI);
-
-  context.fillStyle = d.color;
-  context.fill();
+  ret = 'hsl(' + hue + ', 100%, 100%)'; // TODO: Fiddle with alpha should it be 100?
+  
+//  console.log(ret);
+  return ret;
 }
