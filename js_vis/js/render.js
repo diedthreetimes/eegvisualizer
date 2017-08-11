@@ -7,7 +7,7 @@ var canvas = document.querySelector("canvas"),
     nodes = [],
     MAX_VAL = 1200.0,
     MIN_VAL = -500.0,
-    SMOOTH = false
+    SMOOTH = true
     CLIP_SCALE = 0.75;
     ;
 
@@ -95,12 +95,18 @@ function redrawColors(colors){
 var buffer = [];
 var max = 0;
 var min = 0;
-var buffer_limit = 30;
+var window = 150; // TODO: Have the window change based on key events
 var avg = 0;
+//var count = 0;
 function trackaverage(values){
-  if (buffer.length == buffer_limit) {
+//  count += 1;
+  if (buffer.length == window) {
     buffer.shift();
   }
+
+  // if (count % 1200 == 0) {
+  //   console.log(values);
+  // }
 
   buffer.push(values)
   
