@@ -3,13 +3,14 @@ var canvas = document.querySelector("canvas"),
     MIN_VAL = -500.0,
     SMOOTH = true,
     REDUCE_FRAMERATE = true,
-    SKIPPED_FRAMES = 100,
-    CLIP_SCALE = 0.75,
-    HUE_WIDTH = 30;
+    SKIPPED_FRAMES = 25,
+    CLIP_SCALE = 0.90,
+    HUE_WIDTH = 40;
     ;
 
 // Change this if the proxy is not on the local machine
-var socket = new WebSocket('ws://localhost:8080');
+var socket = new WebSocket('ws://192.168.43.2:8080');
+//var socket = new WebSocket('ws://localhost:8080');
 // TODO: We may want to start the socket connection inside a document ready listener like
 //document.addEventListener("DOMContentLoaded", function(event) { 
 // Start the socket
@@ -42,12 +43,82 @@ socket.onmessage = function(evt){
 
 function redrawColors(values){
   // TODO: Possibly make these selectors globals to avoid unecessary work
-  var stop1 = d3.select(".stop1");
-  var stop2 = d3.select(".stop2");
   // For each layer set and colorize
   // Set the baground gradient
-  stop1.transition().attr('stop-color', colorize(values[0],0));
-  stop2.transition().attr('stop-color', colorize(values[1],1));
+  d3.select(".stop1").transition().attr('stop-color', colorize(values[5],0));
+  d3.select(".stop2").transition().attr('stop-color', colorize(values[6],1));
+
+  d3.selectAll("circle")
+    .transition().attr("style", "fill: " + colorize(values[0],2));
+
+  // d3.select("#thebox")
+  //   .transition().attr("style", "fill: " + colorize(values[1],7));
+
+  group2 = d3.select("#Light_Blue_lines");   
+  group2.selectAll("circle")
+    .transition().attr("style", "fill: " + colorize(values[3],6));
+  group2.selectAll("path")
+    .transition().attr("style", "fill: " + colorize(values[2],6));
+  group2.selectAll("ellipse")
+    .transition().attr("style", "fill: " + colorize(values[1],6));
+
+
+  // group1 = d3.select("#group1");
+  
+  // group1.selectAll("circle")
+  //   .transition().attr("style", "fill: " + colorize(values[2],2));
+  // group1.selectAll("path")
+  //   .transition().attr("style", "fill: " + colorize(values[2],2));
+  // group1.selectAll("ellipse")
+  //   .transition().attr("style", "fill: " + colorize(values[2],2));
+  
+
+  // group3 = d3.select("#group3");
+  
+  // group3.selectAll("circle")
+  //   .transition().attr("style", "fill: " + colorize(values[3],5));
+  // group3.selectAll("path")
+  //   .transition().attr("style", "fill: " + colorize(values[3],5));
+  // group3.selectAll("ellipse")
+  //   .transition().attr("style", "fill: " + colorize(values[3],5));
+
+  // group4 = d3.select("#group4");
+  
+  // group4.selectAll("circle")
+  //   .transition().attr("style", "fill: " + colorize(values[4],6));
+  // group4.selectAll("path")
+  //   .transition().attr("style", "fill: " + colorize(values[4],6));
+  // group4.selectAll("ellipse")
+  //   .transition().attr("style", "fill: " + colorize(values[4],6));
+
+  // group5 = d3.select("#group5");
+  
+  // group5.selectAll("circle")
+  //   .transition().attr("style", "fill: " + colorize(values[5],4));
+  // group5.selectAll("path")
+  //   .transition().attr("style", "fill: " + colorize(values[5],4));
+  // group5.selectAll("ellipse")
+  //   .transition().attr("style", "fill: " + colorize(values[5],4));
+
+  // group6 = d3.select("#group6");
+  
+  // group6.selectAll("circle")
+  //   .transition().attr("style", "fill: " + colorize(values[6],6));
+  // group6.selectAll("path")
+  //   .transition().attr("style", "fill: " + colorize(values[6],6));
+  // group6.selectAll("ellipse")
+  //   .transition().attr("style", "fill: " + colorize(values[6],6));
+
+  // group7 = d3.select("#group7");
+  
+  // group7.selectAll("circle")
+  //   .transition().attr("style", "fill: " + colorize(values[4],2));
+  // group7.selectAll("path")
+  //   .transition().attr("style", "fill: " + colorize(values[4],2));
+  // group7.selectAll("ellipse")
+  //   .transition().attr("style", "fill: " + colorize(values[4],2));
+
+
 
 
   // for (i = 0; i < values.length; i++) {    
@@ -94,20 +165,20 @@ function trackaverage(values){
 var hues = [
 235, // Channel 1 - BOTTOM
 306, // Channel 2 - TOP
-120, // Channel 3 - Green
-292, // Channel 4 - Magenta
-38, // Channel 5 - Orange
-180, // Channel 6 - Cyan
-59  // Channel 7 - Yellow // TODO: Some of these may need to be remapped
+59,  // Channel 3 - Yellow // group 1
+120, // Channel 4 - Green
+292, // Channel 5 - Magenta
+38, // Channel 6 - Orange
+180, // Channel 7 - Cyan
+160]
 ]
-var layer_ids = [ // TODO: Determine the layer ids and the re-style logic
+//var layer_ids = [ // TODO: Determine the layer ids and the re-style logic
 //  GREEN // Channel 3
 // MAGENTA // Channel 4
 // Orange // Channel 5
-"Light_Blue_lines",// Cyan // Channel 6
+//"Light_Blue_lines",// Cyan // Channel 6
 // Yellow // Channel 7
-]
-var background_saturation = '85%';
+//]
 function colorize(value, index){
   // Map value to a 0...1 scale
   if (SMOOTH) { 
@@ -126,12 +197,12 @@ function colorize(value, index){
   //var hue = (i * (hue1 - hue0)) + hue0;
   ret = ""
   if (index == 0) { // Bottom
-    ret =  'hsl(' + hue + ', ' + '85%,65%)';
-  } if (index == 1) { // TOP 
-    ret =  'hsl(' + hue + ', ' + '100%,41%)';
+    ret =  'hsl(' + hue + ', ' + '85%,50%)'; // 65
+  } else if (index == 1) { // TOP 
+    ret =  'hsl(' + hue + ', ' + '100%,50%)'; // 41
+  } else {
+    ret = 'hsl(' + hue + ', 100%, 50%)'; // TODO: Fiddle with alpha should it be 100?
   }
-
-  ret = 'hsl(' + hue + ', 100%, 100%)'; // TODO: Fiddle with alpha should it be 100?
   
 //  console.log(ret);
   return ret;
